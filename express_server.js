@@ -57,10 +57,26 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//Delete single URL//
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   console.log(`Delete the item`);
+  res.redirect("/urls");
+});
+
+//Url page jumping to dinamic signle page with edit button//
+app.post("/urls/:shortURL/edit", (req, res) => {
+  const shortURL = req.params.shortURL;
+  res.redirect(`/urls/${shortURL}`);
+});
+
+//Dinamic page editing with submit button//
+app.post("/urls/:id", (req, res) => {
+  console.log(req.body.newURL);
+  console.log(req.params.id);
+  urlDatabase[req.params.id] = req.body.newURL;
+
   res.redirect("/urls");
 });
 
