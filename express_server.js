@@ -8,6 +8,7 @@ function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
 }
 
+//middleware//
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 //set ejs as a template engine//
@@ -30,18 +31,22 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//create new url post//
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[shortURL] = longURL;
-  console.log(urlDatabase);
+
   res.redirect(`/urls/${shortURL}`);
   console.log(`302 Found`);
 });
 
 app.get("/urls/new", (req, res) => {
+  const templateVars = {
+    username: req.cookies["username"],
+  };
   console.log(`200 Ok`);
-  res.render("urls_new");
+  res.render("urls_new", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -53,6 +58,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    username: req.cookies["username"],
   };
   res.render("urls_show", templateVars);
   console.log(`200 Ok`);
