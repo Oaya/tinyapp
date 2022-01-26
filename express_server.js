@@ -1,4 +1,5 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
@@ -8,6 +9,7 @@ function generateRandomString() {
 }
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 //set ejs as a template engine//
 app.set("view engine", "ejs");
 
@@ -21,7 +23,10 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -57,6 +62,18 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// login with username//
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
+});
+
+// logout and clear the username//
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+});
+
 //Delete single URL//
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -73,8 +90,6 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //Dinamic page editing with submit button//
 app.post("/urls/:id", (req, res) => {
-  console.log(req.body.newURL);
-  console.log(req.params.id);
   urlDatabase[req.params.id] = req.body.newURL;
 
   res.redirect("/urls");
