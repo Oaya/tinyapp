@@ -123,23 +123,38 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
-});
+  const { email, password } = req.body;
+  const validEmail = checkEmail(email);
 
+  if (!validEmail) {
+    console.log(`This email address is not registed yet`);
+    res.statusCode = 403;
+    res.write("This email address is not registed yet");
+    res.end();
+  } else if (validEmail && validEmail.password !== password) {
+    console.log(`Invaild password`);
+    res.statusCode = 403;
+    res.write("Invaild password");
+    res.end();
+  } else {
+    console.log(`Valid email and password `);
+    res.cookie("user_id", user[validEmail.id]["id"]);
+    res.redirect("/urls");
+  }
+});
+const checkEmail = (newEmail) => {
+  for (const id in user) {
+    if (user[id].email === newEmail) {
+      return user[id];
+    }
+    return false;
+  }
+};
 // registraion  page//
 app.get("/register", (req, res) => {
   res.render("registration");
 });
 
-const checkEmail = (newEmail) => {
-  for (const id in user) {
-    if (user[id].email !== newEmail) {
-      return newEmail;
-    }
-    return false;
-  }
-};
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -151,7 +166,7 @@ app.post("/register", (req, res) => {
     res.statusCode = 400;
     res.write("400 Email or password can't be empty");
     res.end();
-  } else if (!validEmail) {
+  } else if (validEmail) {
     console.log(`The email address is invalid`);
     res.statusCode = 400;
     res.write("The email address is invalid");
