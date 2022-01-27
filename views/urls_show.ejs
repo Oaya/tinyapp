@@ -8,12 +8,21 @@
       integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
       crossorigin="anonymous"
     />
-    <title>URL - TinyApp Example</title>
+    <title>Details</title>
   </head>
 
   <body>
     <%- include ('partials/_header') %>
     <div class="card text-center">
+      <% if(user === undefined) {%>
+      <div class="alert alert-danger" role="alert">
+        User should login first!!
+      </div>
+      <% } else if(user.id !== urlUserId) {%>
+      <div class="alert alert-danger" role="alert">
+        This URL doesn't beloing this user
+      </div>
+      <% } %>
       <div class="card-header"></div>
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>

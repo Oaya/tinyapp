@@ -9,6 +9,27 @@ function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
 }
 
+//Helper function //
+const checkByEmail = (newEmail) => {
+  for (const id in user) {
+    if (user[id].email === newEmail) {
+      return user[id];
+    }
+    return false;
+  }
+};
+
+//single URL details page//
+const urlsForUser = (id) => {
+  let urls = {};
+  for (const data in urlDatabase) {
+    if (urlDatabase[data].userID === id) {
+      urls[data] = { longURL: urlDatabase[data].longURL, userID: id };
+    }
+  }
+  return urls;
+};
+
 //middleware//
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -41,17 +62,7 @@ const user = {
   },
 };
 
-//Helper function //
-const checkByEmail = (newEmail) => {
-  for (const id in user) {
-    if (user[id].email === newEmail) {
-      return user[id];
-    }
-    return false;
-  }
-};
-
-//Home page//
+//Landing Page//
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -59,9 +70,10 @@ app.get("/", (req, res) => {
 //Url page//
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
+  const urls = urlsForUser(userId);
 
   const templateVars = {
-    urls: urlDatabase,
+    urls: urls,
     user: user[userId],
   };
 
@@ -71,7 +83,7 @@ app.get("/urls", (req, res) => {
 // Create new URL page//
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
-  console.log(userId);
+
   const templateVars = {
     user: user[userId],
   };
@@ -80,7 +92,7 @@ app.get("/urls/new", (req, res) => {
     res.write("Only loggedin user can create New URL");
     res.end();
   } else {
-    console.log(`200 Ok`);
+    console.log(`created new shorten URL`);
     res.render("urls_new", templateVars);
   }
 });
@@ -89,10 +101,54 @@ app.post("/urls/new", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   const userId = req.cookies["user_id"];
-  urlDatabase[shortURL] = { longURL: longURL, userId: userId };
+  urlDatabase[shortURL] = { longURL: longURL, userID: userId };
 
-  res.redirect(`/urls/${shortURL}`);
   console.log(`302 Found`);
+  res.redirect(`/urls/${shortURL}`);
+});
+
+app.get("/urls/:shortURL", (req, res) => {
+  const userId = req.cookies["user_id"];
+
+  const shortURL = req.params.shortURL;
+  console.log("userId", userId);
+
+  if (!userId || userId !== urlDatabase[shortURL].userID) {
+    res.redirect("/url");
+  } else {
+    const templateVars = {
+      shortURL,
+      longURL: urlDatabase[shortURL].longURL,
+      urlUserId: urlDatabase[shortURL].userID,
+
+      user: user[userId],
+    };
+    res.render("urls_show", templateVars);
+    console.log(`200 Ok`);
+  }
+});
+
+//Delete single URL//
+app.post("/urls/:id/delete", (req, res) => {
+  const shortURL = req.params.id;
+  delete urlDatabase[shortURL];
+  console.log(`Delete signleURL`);
+  res.redirect("/urls");
+});
+
+//Url page jumping to dinamic signle page with edit button//
+app.post("/urls/:id/edit", (req, res) => {
+  const shortURL = req.params.id;
+  res.redirect(`/urls/${shortURL}`);
+});
+
+//Dinamic page editing with submit button//
+app.post("/urls/:id", (req, res) => {
+  const userId = req.cookies["user_id"];
+
+  urlDatabase[req.params.id] = { longURL: req.body.newURL, userID: userId };
+
+  res.redirect("/urls");
 });
 
 //Jmup to the id page//
@@ -101,47 +157,12 @@ app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL].longURL;
   for (const url in urlDatabase) {
-    if (shortURL === urlDatabase[url]) {
+    if (shortURL === url) {
       res.redirect(longURL);
     } else {
-      res.render("error");
+      res.status(400).send(`the id URL doesn't exit.`);
     }
   }
-});
-
-//single URL details page//
-app.get("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies["user_id"];
-
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-
-    user: user[userId],
-  };
-  res.render("urls_show", templateVars);
-  console.log(`200 Ok`);
-});
-
-//Delete single URL//
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  console.log(`Delete the item`);
-  res.redirect("/urls");
-});
-
-//Url page jumping to dinamic signle page with edit button//
-app.post("/urls/:shortURL/edit", (req, res) => {
-  const shortURL = req.params.shortURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
-//Dinamic page editing with submit button//
-app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = { longURL: req.body.newURL };
-
-  res.redirect("/urls");
 });
 
 //Login with Email and password//
@@ -155,18 +176,17 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
+
   const validEmail = checkByEmail(email);
 
   if (!validEmail) {
     console.log(`This email address is not registed yet`);
-    res.statusCode = 403;
-    res.write("This email address is not registed yet");
-    res.end();
-  } else if (validEmail && validEmail.password !== password) {
+
+    res.status(403).send(`This email address is not registed yet`);
+  } else if (validEmail?.password !== password) {
     console.log(`Invaild password`);
-    res.statusCode = 403;
-    res.write("Invaild password");
-    res.end();
+
+    res.status(403).send(`Invalid password`);
   } else {
     console.log(`Valid email and password `);
     res.cookie("user_id", user[validEmail.id]["id"]);
@@ -185,22 +205,20 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const { email, password } = req.body;
+
   const userId = generateRandomString();
   const validEmail = checkByEmail(email);
 
   if (email === "" || password === "") {
-    console.log(`Email of password is empty`);
-    res.statusCode = 400;
-    res.write("400 Email or password can't be empty");
-    res.end();
+    console.log(`Email or password is empty`);
+
+    res.status(400).send(`Email or password can't be empty`);
   } else if (validEmail) {
-    console.log(`The email address is invalid`);
-    res.statusCode = 400;
-    res.write("The email address is invalid");
+    console.log(`This email address is invalid`);
+
+    res.status(400).send(`The email address is invalid`);
     // res.redirect("/register");
-    res.end();
   } else {
     checkByEmail(email);
     user[userId] = {
@@ -208,7 +226,8 @@ app.post("/register", (req, res) => {
       email,
       password,
     };
-    console.log(`registered new user`);
+
+    console.log(`Registered new user`);
     res.cookie("user_id", user[userId]["id"]);
     res.redirect("/urls");
   }
@@ -217,6 +236,7 @@ app.post("/register", (req, res) => {
 //Logout and clear the user_id for cookie//
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
+
   res.redirect("/urls");
 });
 
