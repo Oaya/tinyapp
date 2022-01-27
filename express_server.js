@@ -18,8 +18,14 @@ app.set("view engine", "ejs");
 
 //Database//
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const user = {
@@ -50,7 +56,7 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-// url page//
+//Url page//
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
 
@@ -62,29 +68,45 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.post("/urls", (req, res) => {
+// Create new URL page//
+app.get("/urls/new", (req, res) => {
+  const userId = req.cookies["user_id"];
+  console.log(userId);
+  const templateVars = {
+    user: user[userId],
+  };
+
+  if (!userId) {
+    res.write("Only loggedin user can create New URL");
+    res.end();
+  } else {
+    console.log(`200 Ok`);
+    res.render("urls_new", templateVars);
+  }
+});
+
+app.post("/urls/new", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  const userId = req.cookies["user_id"];
+  urlDatabase[shortURL] = { longURL: longURL, userId: userId };
 
   res.redirect(`/urls/${shortURL}`);
   console.log(`302 Found`);
 });
 
-// Create new URL page//
-app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
-
-  const templateVars = {
-    user: user[userId],
-  };
-  console.log(`200 Ok`);
-  res.render("urls_new", templateVars);
-});
+//Jmup to the id page//
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  for (const url in urlDatabase) {
+    if (shortURL === urlDatabase[url]) {
+      res.redirect(longURL);
+    } else {
+      res.render("error");
+    }
+  }
 });
 
 //single URL details page//
@@ -93,7 +115,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
+
     user: user[userId],
   };
   res.render("urls_show", templateVars);
@@ -116,12 +139,12 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //Dinamic page editing with submit button//
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.newURL;
+  urlDatabase[req.params.id] = { longURL: req.body.newURL };
 
   res.redirect("/urls");
 });
 
-// Login with Email and password//
+//Login with Email and password//
 app.get("/login", (req, res) => {
   const user = checkByEmail(req.body.email);
   const templateVars = {
