@@ -35,6 +35,16 @@ const user = {
   },
 };
 
+//Helper function //
+const checkByEmail = (newEmail) => {
+  for (const id in user) {
+    if (user[id].email === newEmail) {
+      return user[id];
+    }
+    return false;
+  }
+};
+
 //Home page//
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -61,7 +71,7 @@ app.post("/urls", (req, res) => {
   console.log(`302 Found`);
 });
 
-//create new URL page//
+// Create new URL page//
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
 
@@ -90,12 +100,6 @@ app.get("/urls/:shortURL", (req, res) => {
   console.log(`200 Ok`);
 });
 
-// logout and clear the username//
-app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
-});
-
 //Delete single URL//
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -117,14 +121,18 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-// login with username//
+// Login with Email and password//
 app.get("/login", (req, res) => {
-  res.render("login");
+  const user = checkByEmail(req.body.email);
+  const templateVars = {
+    user: user,
+  };
+  res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const validEmail = checkEmail(email);
+  const validEmail = checkByEmail(email);
 
   if (!validEmail) {
     console.log(`This email address is not registed yet`);
@@ -142,24 +150,22 @@ app.post("/login", (req, res) => {
     res.redirect("/urls");
   }
 });
-const checkEmail = (newEmail) => {
-  for (const id in user) {
-    if (user[id].email === newEmail) {
-      return user[id];
-    }
-    return false;
-  }
-};
-// registraion  page//
+
+// Registraion  page//
 app.get("/register", (req, res) => {
-  res.render("registration");
+  const user = checkByEmail(req.body.email);
+
+  const templateVars = {
+    user: user,
+  };
+  res.render("registration", templateVars);
 });
 
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const userId = generateRandomString();
-  const validEmail = checkEmail(email);
+  const validEmail = checkByEmail(email);
 
   if (email === "" || password === "") {
     console.log(`Email of password is empty`);
@@ -173,7 +179,7 @@ app.post("/register", (req, res) => {
     // res.redirect("/register");
     res.end();
   } else {
-    checkEmail(email);
+    checkByEmail(email);
     user[userId] = {
       id: userId,
       email,
@@ -183,6 +189,12 @@ app.post("/register", (req, res) => {
     res.cookie("user_id", user[userId]["id"]);
     res.redirect("/urls");
   }
+});
+
+//Logout and clear the user_id for cookie//
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id");
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
