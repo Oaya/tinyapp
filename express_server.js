@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const bcrypt = require("bcryptjs");
 
 //create randomstring for password and url//
 function generateRandomString() {
@@ -15,8 +16,8 @@ const checkByEmail = (newEmail) => {
     if (user[id].email === newEmail) {
       return user[id];
     }
-    return false;
   }
+  return false;
 };
 
 //single URL details page//
@@ -176,14 +177,13 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-
   const validEmail = checkByEmail(email);
 
   if (!validEmail) {
     console.log(`This email address is not registed yet`);
 
     res.status(403).send(`This email address is not registed yet`);
-  } else if (validEmail?.password !== password) {
+  } else if (!bcrypt.compareSync(password, validEmail?.password)) {
     console.log(`Invaild password`);
 
     res.status(403).send(`Invalid password`);
@@ -206,6 +206,7 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   const userId = generateRandomString();
   const validEmail = checkByEmail(email);
@@ -224,10 +225,10 @@ app.post("/register", (req, res) => {
     user[userId] = {
       id: userId,
       email,
-      password,
+      password: hashedPassword,
     };
 
-    console.log(`Registered new user`);
+    console.log(`Registered new user`, user);
     res.cookie("user_id", user[userId]["id"]);
     res.redirect("/urls");
   }
