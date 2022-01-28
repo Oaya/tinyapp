@@ -1,9 +1,3 @@
-// const generateUserHelper = (urlDatabase) => {
-//   //single URL details page//
-
-//   return { getUserByEmail, urlsForUser };
-// };
-
 const getUserByEmail = (email, database) => {
   for (const id in database) {
     if (database[id].email === email) {
