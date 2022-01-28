@@ -6,7 +6,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 !["User's urls page"](https://github.com/Oaya/tinyapp/blob/master/docs/urls-page.png?raw=true)
 
-!["Registraion page"](https://github.com/Oaya/tinyapp/blob/master/docs/registraion.png?raw=true)
+!["Detail & Edit page"](https://github.com/Oaya/tinyapp/blob/master/docs/urls-showpage.png?raw=true)
 
 ## Dependencies
 
