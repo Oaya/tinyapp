@@ -18,11 +18,11 @@
       <div class="alert alert-danger" role="alert">
         User should login first!!
       </div>
-      <% } else if(user.id !== urlUserId) {%>
+      <% } else if(user.id !== userID) {%>
       <div class="alert alert-danger" role="alert">
         This URL doesn't beloing this user
       </div>
-      <% } %>
+      <% }%>
       <div class="card-header"></div>
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
@@ -37,7 +37,7 @@
           <label for="newURL">New URL: </label>
           <input type="text" id="newURL" name="newURL" value="<%= longURL %>" />
 
-          <button type="submit" class="btn btn-primary">Submit</button>
+          <button type="submit" class="btn btn-primary">Edit</button>
         </form>
       </div>
     </div>

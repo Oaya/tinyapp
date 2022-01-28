@@ -19,7 +19,7 @@
   <body>
     <%- include('partials/_header') %>
     <main style="margin: 1em">
-      <% if(user === undefined) {%>
+      <% if(! user ) {%>
       <div class="alert alert-danger" role="alert">
         User should login first!!
       </div>
