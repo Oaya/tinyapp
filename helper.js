@@ -23,4 +23,8 @@ const urlsForUser = (id, urlDatabase) => {
   return urls;
 };
 
-module.exports = { getUserByEmail, urlsForUser };
+const generateRandomString = () => {
+  return Math.random().toString(36).substr(2, 6);
+};
+
+module.exports = { getUserByEmail, urlsForUser, generateRandomString };

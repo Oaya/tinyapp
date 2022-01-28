@@ -6,14 +6,13 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
 
-const { getUserByEmail, urlsForUser } = require("./helper");
+const {
+  getUserByEmail,
+  urlsForUser,
+  generateRandomString,
+} = require("./helper");
 
-//create randomstring for password and url//
-function generateRandomString() {
-  return Math.random().toString(36).substr(2, 6);
-}
-
-//middleware//
+//Middleware//
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
@@ -23,7 +22,7 @@ app.use(
   })
 );
 
-//set ejs as a template engine//
+//Set ejs as a template engine//
 app.set("view engine", "ejs");
 
 //Database//
@@ -127,6 +126,7 @@ app.post("/urls/:id", (req, res) => {
     return res.redirect("/login");
   }
   urlDatabase[req.params.id] = { longURL: req.body.newURL, userID: userId };
+
   res.redirect("/urls");
 });
 
@@ -135,7 +135,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
   if (!userId) {
-    res.write("user should l ogin first");
+    res.write("user should login first");
     res.end();
   }
   delete urlDatabase[shortURL];
@@ -151,15 +151,13 @@ app.post("/urls/:id/edit", (req, res) => {
 
 //Jmup to the id page//
 app.get("/u/:id", (req, res) => {
-  const shortURL = req.params.id;
+  const url = urlDatabase[req.params.id];
 
-  for (const url in urlDatabase) {
-    if (shortURL === url) {
-      res.redirect(urlDatabase[shortURL].longURL);
-    } else {
-      res.status(400).send(`the id URL doesn't exit.`);
-    }
+  if (url && url.longURL) {
+    return res.redirect(url.longURL);
   }
+
+  res.status(400).send(`the id URL doesn't exit.`);
 });
 
 //Login with Email and password//
@@ -185,6 +183,7 @@ app.post("/login", (req, res) => {
     res.status(403).send(`Invalid password`);
   } else {
     req.session.user_id = users[validEmail.id]["id"];
+    console.log(validEmail);
     res.redirect("/urls");
   }
 });
