@@ -14,7 +14,7 @@
   <body>
     <%- include ('partials/_header') %>
     <div class="card text-center">
-      <% if(user === undefined) {%>
+      <% if(!user) {%>
       <div class="alert alert-danger" role="alert">
         User should login first!!
       </div>

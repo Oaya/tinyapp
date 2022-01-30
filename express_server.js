@@ -3,13 +3,15 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const bcrypt = require("bcryptjs");
+
 const cookieSession = require("cookie-session");
 
 const {
   getUserByEmail,
   urlsForUser,
   generateRandomString,
+  checkAuthentication,
+  addUser,
 } = require("./helper");
 
 //Middleware//
@@ -96,7 +98,6 @@ app.get("/urls/new", (req, res) => {
   if (!userId) {
     return res.redirect("/urls");
   }
-  console.log(`created new shorten URL`);
   res.render("urls_new", templateVars);
 });
 
@@ -139,7 +140,6 @@ app.post("/urls/:id/delete", (req, res) => {
     res.end();
   }
   delete urlDatabase[shortURL];
-  console.log(`Delete signleURL`);
   res.redirect("/urls");
 });
 
@@ -162,11 +162,12 @@ app.get("/u/:id", (req, res) => {
 
 //Login with Email and password//
 app.get("/login", (req, res) => {
+  const user = getUserByEmail(req.body.email, users);
+
   if (req.session.user_id) {
     return res.redirect("/urls");
   }
 
-  const user = getUserByEmail(req.body.email, users);
   const templateVars = {
     user,
   };
@@ -175,15 +176,12 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const validEmail = getUserByEmail(email, users);
 
-  if (!validEmail) {
-    res.status(403).send(`This email address is not registed yet`);
-  } else if (!bcrypt.compareSync(password, validEmail?.password)) {
-    res.status(403).send(`Invalid password`);
+  const { error, data } = checkAuthentication(email, password, users);
+  if (error) {
+    res.status(403).send(`${error}`);
   } else {
-    req.session.user_id = users[validEmail.id]["id"];
-    console.log(validEmail);
+    req.session.user_id = data;
     res.redirect("/urls");
   }
 });
@@ -202,27 +200,13 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10);
 
-  const userId = generateRandomString();
-  const validEmail = getUserByEmail(email, users);
-
-  if (email === "" || password === "") {
-    console.log(`Email or password is empty`);
-
-    res.status(400).send(`Email or password can't be empty`);
-  } else if (validEmail) {
-    console.log(`This email address is invalid`);
-
-    res.status(400).send(`The email address is invalid`);
+  const { error, data } = addUser(email, password, users);
+  if (error) {
+    console.log(error);
+    res.status(403).send(`${error}`);
   } else {
-    getUserByEmail(email, users);
-    users[userId] = {
-      id: userId,
-      email,
-      password: hashedPassword,
-    };
-    req.session.user_id = users[userId]["id"];
+    req.session.user_id = data;
     res.redirect("/urls");
   }
 });
@@ -230,7 +214,6 @@ app.post("/register", (req, res) => {
 //Logout and clear the user_id for session//
 app.post("/logout", (req, res) => {
   req.session = null;
-
   res.redirect("/urls");
 });
 
