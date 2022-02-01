@@ -78,11 +78,18 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   const userID = req.session.user_id;
+  const visitedTime = 0;
   if (!userID) {
     res.write("Only logged in user able to add new url");
     res.end();
   }
-  urlDatabase[shortURL] = { longURL, userID };
+  urlDatabase[shortURL] = {
+    longURL,
+    userID,
+    visitedTime,
+  };
+
+  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -104,8 +111,8 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
-  const { longURL, userID } = urlDatabase[shortURL];
-
+  const { longURL, userID, visitedTime } = urlDatabase[shortURL];
+  console.log(urlDatabase);
   if (!userId) {
     res.write("User should login first");
     res.end();
@@ -115,7 +122,9 @@ app.get("/urls/:id", (req, res) => {
     longURL,
     userID,
     user: users[userId],
+    visitedTime,
   };
+
   res.render("urls_show", templateVars);
 });
 
@@ -152,7 +161,9 @@ app.post("/urls/:id/edit", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const url = urlDatabase[req.params.id];
 
-  if (url && url.longURL) {
+  if (url?.longURL) {
+    url.visitedTime += 1;
+
     return res.redirect(url.longURL);
   }
 
